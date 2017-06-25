@@ -23,6 +23,7 @@ namespace P3DTool.DataModels.DataTypes
 
         public string Texture { get; set; }
         public P3DMaterial Material { get; set; }
+        public uint SGFrom3DS;
 
         public short P1 { get; set; }
         public short P2 { get; set; }

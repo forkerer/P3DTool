@@ -88,7 +88,7 @@ namespace P3DTool.DataModels.FileStructure
 
         public long CalculateSizeFromTexturesList()
         {
-            int size = 5; // Size is Int32 - 4, texture number is byte - 1
+            int size = 1; //texture number is byte - 1
             foreach (TextureName tex in TextureNames)
             {
                 size += tex.Name.Length + 1;

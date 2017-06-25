@@ -96,9 +96,17 @@ namespace P3DTool.DataModels.FileStructure
             return String.Empty;
         }
 
+        public void CalculateLightsPostionRelativeToOrigin(P3DVertex origin)
+        {
+            foreach (Light light in Lights)
+            {
+                light.CalculateLocalPos(origin);
+            }
+        }
+
         public long CalculateSizeFromLightsList()
         {
-            int size = 2; // texture number is short - 2
+            int size = 2; // Lights number is short - 2
             foreach (Light light in Lights)
             {
                 size += light.Name.Length + 1; // NULL terminated name

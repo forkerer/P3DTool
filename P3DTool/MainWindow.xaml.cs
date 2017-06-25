@@ -59,7 +59,7 @@ namespace P3DTool
                     if (Path.GetExtension(path) == ".3ds")
                     {
                         ChangeStatus(new StatusUpdatedEventArguments("Loading 3ds file", 10));
-                        P3DView.Items.Clear();
+                        P3DViewItems.Clear();
                         itemInfo.Children.Clear();
                         File3DS = LIB3DS.lib3ds_file_open(path);
                         P3DFile = new P3D(this);

@@ -48,6 +48,13 @@ namespace P3DTool.DataModels.DataTypes
             }
         }
 
+        public void CalculateLocalPos(P3DVertex origin)
+        {
+            Position.x -= origin.x;
+            Position.y -= origin.y;
+            Position.z -= origin.z;
+        }
+
         public int ColorFromRGB(int r, int g, int b)
         {
             return (r << 16) + (g << 8) + b;

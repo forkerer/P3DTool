@@ -204,6 +204,10 @@ namespace P3DTool.DataModels.DataTypes
 
             foreach (Lib3dsFace face in mesh.faces)
             {
+                if (face.index.Length > 3)
+                {
+                    MessageBox.Show("SHIT.");
+                }
                 TexturePolygon texPoly = new TexturePolygon();
                 texPoly.P1 = Convert.ToInt16(face.index[0]);
                 texPoly.P2 = Convert.ToInt16(face.index[2]);
@@ -214,15 +218,16 @@ namespace P3DTool.DataModels.DataTypes
                 texPoly.V1 = mesh.texcos[face.index[0]].t;
                 texPoly.V2 = mesh.texcos[face.index[2]].t;
                 texPoly.V3 = mesh.texcos[face.index[1]].t;
-                texPoly.Texture = GetTextureList()[face.material-1].Name;
+                texPoly.Texture = GetTextureFrom3dsID(file,face.material).Name;
                 texPoly.Material = MaterialFrom3DS(file.materials[face.material], (face.smoothing_group != 0));
+                texPoly.SGFrom3DS = face.smoothing_group;
                 Polygons.Add(texPoly);
             }
 
             Name = mesh.name;
-            ((P3DElementView)TreeItem.Header).content.Text = Name;
+            Application.Current.Dispatcher.BeginInvoke((Action)(() => ((P3DElementView)TreeItem.Header).content.Text = Name));
             Size = 1;
-            Flags = 1;
+            Flags = FlagFrom3DSName(mesh.name);
             NumVertices = Convert.ToInt16(mesh.nvertices);
             NumPolys = Convert.ToInt16(mesh.nfaces);
             LocalPos = new P3DVertex(mesh.matrix[3, 0], mesh.matrix[3, 1], mesh.matrix[3, 2]);
@@ -306,6 +311,18 @@ namespace P3DTool.DataModels.DataTypes
             return Parent.Parent.TextureChunk.TextureNames;
         }
 
+        private TextureName GetTextureFrom3dsID(Lib3dsFile file, int id)
+        {
+            foreach (TextureName tex in GetTextureList())
+            {
+                if (tex.Name == file.materials[id].texture1_map.name.ToLower())
+                {
+                    return tex;
+                }
+            }
+            return GetTextureList()[0];
+        }
+
         public void SortPolygonsAndGenerateTextureInfo()
         {
             List<TexturePolygon> newPolygons = new List<TexturePolygon>();
@@ -350,6 +367,38 @@ namespace P3DTool.DataModels.DataTypes
             }
         }
 
+        public void CalculateExtent()
+        {
+            float minX = Vertices[0].x;
+            float maxX = Vertices[0].x;
+            float minY = Vertices[0].y;
+            float maxY = Vertices[0].y;
+            float minZ = Vertices[0].z;
+            float maxZ = Vertices[0].z;
+            foreach (P3DVertex vert in Vertices)
+            {
+                minX = Math.Min(minX, vert.x);
+                maxX = Math.Max(maxX, vert.x);
+                minY = Math.Min(minY, vert.y);
+                maxY = Math.Max(maxY, vert.y);
+                minZ = Math.Min(minZ, vert.z);
+                maxZ = Math.Max(maxZ, vert.z);
+            }
+            Length = maxX - minX;
+            Height = maxY - minY;
+            Depth = maxZ - minZ;
+            LocalPos.x = ((maxX + minX) / 2);
+            LocalPos.y = ((maxY + minY) / 2);
+            LocalPos.z = ((maxZ + minZ) / 2);
+        }
+
+        public void CalculateLocalPos(P3DVertex origin)
+        {
+            LocalPos.x -= origin.x;
+            LocalPos.y -= origin.y;
+            LocalPos.z -= origin.z;
+        }
+
         private P3DMaterial MaterialFrom3DS(Lib3dsMaterial material, bool hasSmoothing)
         {
             if (!hasSmoothing)
@@ -368,6 +417,48 @@ namespace P3DTool.DataModels.DataTypes
             return P3DMaterial.MAT_GORAUD;
         }
 
+        private uint FlagFrom3DSName(string name)
+        {
+            uint flag = (uint) MeshFlags.VISIBLE;
+            if (name.ToLower() == "main")
+            {
+                flag += (uint) MeshFlags.MAIN;
+            }
+            if (name.ToLower() == "mainshad")
+            {
+                flag += (uint) MeshFlags.TRACING_SHAPE;
+                flag -= (uint)MeshFlags.VISIBLE;
+            }
+            if (name.ToLower() == "maincoll")
+            {
+                flag += (uint) MeshFlags.COLLISION_SHAPE;
+                flag -= (uint) MeshFlags.VISIBLE;
+            }
+            return flag;
+        }
+
+        public Int32 GetMeshSize()
+        {
+            //Int32 size = 7; // SUBMESH id
+            Int32 size = Name.Length + 1; //Name + NULL
+            size += 4; //FLAGS
+            size += 12; //POSITION
+            size += 12; //EXTENT
+            size += (Info.Count * 14); //TEXTURES INFO
+            size += 2; //VerticesCount
+            size += Vertices.Count * 12; //Vertices size
+            size += 2; //Polygons count
+            size += Polygons.Count * 30; //Polygons size
+
+            Size = size; //Set submesh size
+
+            size += 7; //SUBMESH id
+            size += 4; //Submesh size
+
+            return size;
+        }
+
+
         public override ArrayList GetItemInfo()
         {
 //            ArrayList itemInfo = new ArrayList { "Mesh flags: " };
@@ -382,6 +473,7 @@ namespace P3DTool.DataModels.DataTypes
             ArrayList itemInfo = new ArrayList
             {
                 new InputText(this, "Name:" ,Name, true, "name"),
+                new InputText(this, "Size:", Size.ToString(), false, ""),
                 new InputText(this, "Vertices count:" ,NumVertices.ToString(), false, ""),
                 new InputText(this, "Polygons count:" ,NumPolys.ToString(), false, ""),
                 new InputText(this,"Length:",Length.ToString(),false, ""),
@@ -404,6 +496,7 @@ namespace P3DTool.DataModels.DataTypes
                 itemInfo.Add(new InputBool(this, flag, isSet, true, flag));
             }
         }
+
 
         
     }

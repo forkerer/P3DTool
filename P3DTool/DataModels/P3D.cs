@@ -284,7 +284,7 @@ namespace P3DTool.DataModels
                 float x = light.position[0];
                 float y = light.position[2];
                 float z = light.position[1];
-                float radius = light.inner_range; //ASSIMP doesn't save point light radius
+                float radius = light.inner_range;
                 int color = LightsChunk.ColorFromRGB(Convert.ToInt32(light.color[0]*255), Convert.ToInt32(light.color[1] * 255), Convert.ToInt32(light.color[2] * 255));
                 bool corona = false;
                 bool lensFlare = false;
@@ -303,8 +303,17 @@ namespace P3DTool.DataModels
                 Mesh newMesh = new Mesh(MeshesChunk);
                 newMesh.Parse3DSMesh(scene, mesh);
                 newMesh.SortPolygonsAndGenerateTextureInfo();
+                newMesh.CalculateExtent();
                 MeshesChunk.Meshes.Add(newMesh);
             }
+            MeshesChunk.CheckFlagsValidity();
+            MeshesChunk.CalculateMeshChunkSize();
+            P3DVertex origin = MeshesChunk.CalculateMeshesLocalPos();
+            LightsChunk.CalculateLightsPostionRelativeToOrigin(origin);
+
+            UserDataChunk = new UserDataChunk(this);
+            UserDataChunk.Size = 4;
+            UserDataChunk.UserData = new byte[] {0, 0, 0, 0};
         }
 
         public override ArrayList GetItemInfo()

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -79,6 +80,74 @@ namespace P3DTool.DataModels.FileStructure
             }
 
             return String.Empty;
+        }
+
+        /// <summary>
+        /// Checks if there's main,tracing,collision flag in any mesh, if not then it automatically assigns those to one
+        /// </summary>
+        public void CheckFlagsValidity()
+        {
+            bool foundMain = false;
+            for (int i = 0; i < MeshesNum; i++)
+            {
+                if ((Meshes[i].Flags & (uint)MeshFlags.MAIN) == (uint)MeshFlags.MAIN)
+                {
+                    foundMain = true;
+                    if (i != 0)
+                    {
+                        Utility.Swap(Meshes, 0, i);
+                    }
+                }
+            }
+            if (!foundMain)
+            {
+                Meshes[0].Flags += (uint) MeshFlags.MAIN;
+            }
+
+            bool foundTracing = false;
+            for (int i = 0; i < MeshesNum; i++)
+            {
+                if ((Meshes[i].Flags & (uint)MeshFlags.TRACING_SHAPE) == (uint)MeshFlags.TRACING_SHAPE)
+                {
+                    foundTracing = true;
+                }
+            }
+            if (!foundTracing)
+            {
+                Meshes[0].Flags += (uint) MeshFlags.TRACING_SHAPE;
+            }
+
+            bool foundColl = false;
+            for (int i = 0; i < MeshesNum; i++)
+            {
+                if ((Meshes[i].Flags & (uint)MeshFlags.COLLISION_SHAPE) == (uint)MeshFlags.COLLISION_SHAPE)
+                {
+                    foundColl = true;
+                }
+            }
+            if (!foundColl)
+            {
+                Meshes[0].Flags += (uint)MeshFlags.COLLISION_SHAPE;
+            }
+        }
+
+        public void CalculateMeshChunkSize()
+        {
+            Size = 2;
+            foreach (Mesh mesh in Meshes)
+            {
+                Size += mesh.GetMeshSize();
+            }
+        }
+
+        public P3DVertex CalculateMeshesLocalPos()
+        {
+            P3DVertex origin = new P3DVertex(Meshes[0].LocalPos.x, Meshes[0].LocalPos.y, Meshes[0].LocalPos.z);
+            foreach (Mesh mesh in Meshes)
+            {
+                mesh.CalculateLocalPos(origin);
+            }
+            return origin;
         }
 
         public override ArrayList GetItemInfo()

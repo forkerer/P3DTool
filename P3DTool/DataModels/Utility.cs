@@ -16,6 +16,13 @@ namespace P3DTool.DataModels
         {
             return (b & (1 << pos)) != 0;
         }
+
+        public static void Swap<T>(IList<T> list, int indexA, int indexB)
+        {
+            T tmp = list[indexA];
+            list[indexA] = list[indexB];
+            list[indexB] = tmp;
+        }
     }
 
     class TexturePolygon_SortByMaterial : IComparer<TexturePolygon>
@@ -44,4 +51,5 @@ namespace P3DTool.DataModels
         }
 
     }
+    
 }
