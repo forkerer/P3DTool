@@ -7,7 +7,7 @@
              mc:Ignorable="d" Background="White" Height="24" Width="255">
     <Grid>
         <TextBlock Name="Description" HorizontalAlignment="Left" Height="20" Margin="2,2,0,0" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top" Width="113"/>
-        <TextBox Name="Value"  HorizontalAlignment="Left" Height="20" Margin="120,2,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="126" Background="White" TextChanged="Value_TextChanged"/>
+        <TextBox Name="Value"  HorizontalAlignment="Left" Height="20" Margin="120,2,0,0" TextWrapping="NoWrap" Text="TextBox" VerticalAlignment="Top" Width="125" Background="White" TextChanged="Value_TextChanged"/>
 
     </Grid>
 </UserControl>

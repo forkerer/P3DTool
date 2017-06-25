@@ -54,12 +54,21 @@ namespace P3DTool.DataModels.DataTypes
         public Mesh(MeshesChunk parent)
         {
             Parent = parent;
-            TreeItem = new TreeViewItem
-            {
-                Header = new P3DElementView(this, Name, new Bitmap(Properties.Resources.mesh))
-            };
-            Parent.TreeItem.Items.Add(TreeItem);
+            Application.Current.Dispatcher.BeginInvoke((Action)(() => addTreeItem()));
         }
+
+        private void addTreeItem()
+        {
+            lock (this)
+            {
+                TreeItem = new TreeViewItem
+                {
+                    Header = new P3DElementView(this, Name, new Bitmap(Properties.Resources.mesh))
+                };
+                Parent.TreeItem.Items.Add(TreeItem);
+            } 
+        }
+
         public bool ParseMesh(BinaryReader reader)
         {
             byte[] submeshHeader = reader.ReadBytes(7);
@@ -78,7 +87,8 @@ namespace P3DTool.DataModels.DataTypes
                 readen = reader.ReadByte();
             }
             Name = builder.ToString();
-            ((P3DElementView)TreeItem.Header).content.Text = Name;
+            Application.Current.Dispatcher.BeginInvoke((Action)(() => ((P3DElementView)TreeItem.Header).content.Text = Name));
+           // ((P3DElementView)TreeItem.Header).content.Text = Name;
             builder.Clear();
 
             Flags = reader.ReadUInt32();

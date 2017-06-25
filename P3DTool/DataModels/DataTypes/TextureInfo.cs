@@ -1,5 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Drawing;
+using System.Windows;
 using System.Windows.Controls;
 using P3DTool.Views;
 
@@ -22,11 +24,19 @@ namespace P3DTool.DataModels.DataTypes
         public TextureInfo(Mesh parent)
         {
             Parent = parent;
-            TreeItem = new TreeViewItem
+            Application.Current.Dispatcher.BeginInvoke((Action)(() => addTreeItem()));
+        }
+
+        private void addTreeItem()
+        {
+            lock (this)
             {
-                Header = new P3DElementView(this, "TextureInfo", new Bitmap(Properties.Resources.texture))
-            };
-            Parent.TreeItem.Items.Add(TreeItem);
+                TreeItem = new TreeViewItem
+                {
+                    Header = new P3DElementView(this, "TextureInfo", new Bitmap(Properties.Resources.texture))
+                };
+                Parent.TreeItem.Items.Add(TreeItem);
+            }
         }
 
         public override ArrayList GetItemInfo()

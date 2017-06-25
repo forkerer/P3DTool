@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.ObjectModel;
 using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using lib3ds.Net;
@@ -19,7 +21,7 @@ namespace P3DTool.DataModels
     public class P3D : P3DElement
     {
         public MainWindow Parent { get; }
-        public TreeViewItem TreeItem { get; }
+        public TreeViewItem TreeItem { get; } = new TreeViewItem();
         public event StatusUpdatedEventHandler StatusUpdated;
 
         public byte[] MagicWord { get; } = Encoding.ASCII.GetBytes("P3D");
@@ -35,19 +37,23 @@ namespace P3DTool.DataModels
         public P3D(MainWindow parent)
         {
             Parent = parent;
-            TreeItem = new TreeViewItem
+            lock (TreeItem)
             {
-                Header = new P3DElementView(this, "P3D Model", new Bitmap(Resources.car))
-            };
-            Parent.P3DView.Items.Add(TreeItem);
+                TreeItem.Header = new P3DElementView(this, "P3D Model", new Bitmap(Resources.car));
+//                = new TreeViewItem
+//                {
+//                    Header = new P3DElementView(this, "P3D Model", new Bitmap(Resources.car))
+//                };
+                Parent.P3DViewItems.Add(TreeItem);
+            } 
         }
 
-        public void LoadP3D(string path)
+        public async Task LoadP3D(string path)
         {
-            LoadP3D(File.Open(path, FileMode.Open));
+            await Task.Run(() => LoadP3D(File.Open(path, FileMode.Open)));
         }
 
-        public void LoadP3D(Stream data)
+        public async Task LoadP3D(Stream data)
         {
             using (var reader = new BinaryReader(data))
             {
@@ -75,6 +81,7 @@ namespace P3DTool.DataModels
                 //MessageBox.Show(size.xSize.ToString() + " - " + size.ySize.ToString() + " - " + size.zSize.ToString());
 
                 StatusUpdated(new StatusUpdatedEventArguments("Loading textures info from file", 25));
+                await Task.Delay(0).ConfigureAwait(false);
                 TextureChunk = new TextureChunk(this);
                 byte[] texHeader = reader.ReadBytes(3);
                 if (!Utility.ByteArrayCompare(texHeader, TextureChunk.ChunkIdTemplate))
@@ -97,6 +104,7 @@ namespace P3DTool.DataModels
                 }
 
                 StatusUpdated(new StatusUpdatedEventArguments("Loading lights from file", 40));
+                await Task.Delay(0).ConfigureAwait(false);
                 LightsChunk = new LightsChunk(this);
                 byte[] lightsHeader = reader.ReadBytes(6);
                 if (!Utility.ByteArrayCompare(lightsHeader, LightsChunk.ChunkIdTemplate))
@@ -118,6 +126,7 @@ namespace P3DTool.DataModels
                 }
 
                 StatusUpdated(new StatusUpdatedEventArguments("Loading meshes from file", 40));
+                await Task.Delay(0).ConfigureAwait(false);
                 MeshesChunk = new MeshesChunk(this);
                 byte[] meshesHeader = reader.ReadBytes(6);
                 if (!Utility.ByteArrayCompare(meshesHeader, MeshesChunk.ChunkIdTemplate))
@@ -131,7 +140,7 @@ namespace P3DTool.DataModels
                 MeshesChunk.MeshesNum = reader.ReadInt16();
 
 
-                success = MeshesChunk.ReadChunk(reader);
+                success = await MeshesChunk.ReadChunk(reader);
                 if (!success)
                 {
                     StatusUpdated(new StatusUpdatedEventArguments("Failed to load file", 0));
@@ -140,6 +149,7 @@ namespace P3DTool.DataModels
                 }
 
                 StatusUpdated(new StatusUpdatedEventArguments("Loading userdata from file", 80));
+                await Task.Delay(0).ConfigureAwait(false);
                 UserDataChunk = new UserDataChunk(this);
                 byte[] userDataHeader = reader.ReadBytes(4);
                 if (!Utility.ByteArrayCompare(userDataHeader, UserDataChunk.ChunkIdTemplate))
@@ -153,6 +163,7 @@ namespace P3DTool.DataModels
                 UserDataChunk.UserData = reader.ReadBytes(UserDataChunk.Size);
 
                 StatusUpdated(new StatusUpdatedEventArguments("Finished loading", 100));
+                await Task.Delay(0).ConfigureAwait(false);
                 reader.Close();
             }
         }

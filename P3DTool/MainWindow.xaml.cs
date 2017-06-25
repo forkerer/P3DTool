@@ -1,10 +1,10 @@
 ﻿using System;
-using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Threading;
 using lib3ds.Net;
 using Microsoft.Win32;
 using P3DTool.DataModels;
@@ -23,14 +23,20 @@ namespace P3DTool
         public Lib3dsFile File3DS;
         private P3DElement SelectedElement;
         public IToolPanel ActiveToolWindow;
-        private BackgroundWorker worker;
-        private String filepath;
+        public ObservableCollection<TreeViewItem> P3DViewItems = new ObservableCollection<TreeViewItem>();
+        
 
         public MainWindow()
         {
             InitializeComponent();
+            P3DView.ItemsSource = P3DViewItems;
         }
 
+        /// <summary>
+        /// Handles loading of file, starts parser on separate thread 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void LoadButton_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog file = new OpenFileDialog();
@@ -41,18 +47,12 @@ namespace P3DTool
                 if (Path.GetExtension(path) == ".p3d")
                 {
                     ChangeStatus(new StatusUpdatedEventArguments("Loading p3d file", 10));
-                    P3DView.Items.Clear();
+                    SelectedElement = null;
+                    P3DViewItems.Clear();
                     itemInfo.Children.Clear();
                     P3DFile = new P3D(this);
                     P3DFile.StatusUpdated += new StatusUpdatedEventHandler(ChangeStatus);
-                    filepath = path;
-                    if (worker == null)
-                    {
-                        worker = new BackgroundWorker();
-                    }
-                    worker.DoWork += workerLoadP3D;
-                    worker.RunWorkerAsync();
-
+                    Task.Run(() => P3DFile.LoadP3D(path));
                 }
                 else
                 {
@@ -63,7 +63,7 @@ namespace P3DTool
                         itemInfo.Children.Clear();
                         File3DS = LIB3DS.lib3ds_file_open(path);
                         P3DFile = new P3D(this);
-                        Dispatcher.Invoke(new Action(() => P3DFile.Load3DS(File3DS)), DispatcherPriority.Normal, null);
+                        Task.Run(() => P3DFile.Load3DS(File3DS));
                         return;
                     }
                     MessageBox.Show("Format not supported");
@@ -72,47 +72,46 @@ namespace P3DTool
             }
         }
 
-        private void workerLoadP3D(object sender, DoWorkEventArgs e)
-        {
-            Dispatcher.Invoke(new Action(() => P3DFile.LoadP3D(filepath)), DispatcherPriority.Normal, null);
-        }
-
-        private void P3DView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            //itemInfo.Items.Clear();
-            //MessageBox.Show(sender.GetType().ToString());
-            //P3DElement element = ((P3DElementView)((TreeViewItem)sender).Header).parent;
-            //foreach (string item in element.GetItemInfo()) {
-            //	itemInfo.Items.Add(item);
-            //}
-        }
-
+        /// <summary>
+        /// Handles displaying selected P3DElement info in the left panel 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void P3DView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             //MessageBox.Show( ((P3DElementView)((TreeViewItem)e.NewValue).Header).content.Content.ToString());
             itemInfo.Children.Clear();
             try
             {
-                P3DElement element = ((P3DElementView)((TreeViewItem)e.NewValue).Header).ParentElement;
-                foreach (IToolPanel item in element.GetItemInfo())
+                if (e.NewValue as TreeViewItem != null)
                 {
-                    if (item is InputText)
+                    P3DElement element = ((P3DElementView) ((TreeViewItem) e.NewValue).Header).ParentElement;
+                    if (element == null) return;
+                    foreach (IToolPanel item in element.GetItemInfo())
                     {
-                        itemInfo.Children.Add((InputText) item);
-                    }
-                    else
-                    {
-                        itemInfo.Children.Add((InputBool)item);
+                        if (item is InputText)
+                        {
+                            itemInfo.Children.Add((InputText) item);
+                        }
+                        else
+                        {
+                            itemInfo.Children.Add((InputBool) item);
+                        }
                     }
                 }
             }
             catch (Exception exc)
             {
-                MessageBox.Show(exc.Message);
+                MessageBox.Show(exc.Message + " - //SelectedItemChanged// ");
             }
 
         }
 
+        /// <summary>
+        /// Handles saving of P3DFile
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             if (P3DFile == null)
@@ -133,42 +132,40 @@ namespace P3DTool
             }
         }
 
+        /// <summary>
+        /// Handles displaying of context menu options
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void P3DView_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             P3DElement element = ((P3DElementView)e.Source).ParentElement;
             SelectedElement = element;
             ContextMenu menu = new ContextMenu();
-            MenuItem mi;// = new MenuItem();
-//            mi.Header = "Edit";
-//            mi.Click += P3DView_OnContextMenuItemSelected;
-//            menu.Items.Add(mi);
+            MenuItem mi;
+
             if (element is LightsChunk)
             {
-                mi = new MenuItem();
-                mi.Header = "Add Light";
+                mi = new MenuItem {Header = "Add Light"};
                 mi.Click += P3DView_OnContextMenuItemSelected;
                 menu.Items.Add(mi);
 
-                mi = new MenuItem();
-                mi.Header = "Export chunk";
+                mi = new MenuItem {Header = "Export chunk"};
                 mi.Click += P3DView_OnContextMenuItemSelected;
                 menu.Items.Add(mi);
 
-                mi = new MenuItem();
-                mi.Header = "Import chunk";
+                mi = new MenuItem {Header = "Import chunk"};
                 mi.Click += P3DView_OnContextMenuItemSelected;
                 menu.Items.Add(mi);
             }
 
             if (element is Light)
             {
-                mi = new MenuItem();
-                mi.Header = "Clone light";
+                mi = new MenuItem {Header = "Clone light"};
                 mi.Click += P3DView_OnContextMenuItemSelected;
                 menu.Items.Add(mi);
 
-                mi = new MenuItem();
-                mi.Header = "Delete light";
+                mi = new MenuItem {Header = "Delete light"};
                 mi.Click += P3DView_OnContextMenuItemSelected;
                 menu.Items.Add(mi);
             }
@@ -180,19 +177,20 @@ namespace P3DTool
 
         private void P3DView_OnContextMenuItemSelected(object sender, RoutedEventArgs e)
         {
-            //MessageBox.Show(((MenuItem)e.Source).Header.ToString());
             if (((MenuItem) e.Source).Header.ToString().Equals("Add Light"))
             {
                 ((LightsChunk)SelectedElement).AddLightFromContextMenu(this);
             }
         }
 
+        /// <summary>
+        /// Changes information in the status bar  on the bottom of window
+        /// </summary>
+        /// <param name="args"></param>
         public void ChangeStatus(StatusUpdatedEventArguments args)
         {
-            StatusMessage.Text = args.Message;
-            Progress.Value = args.Value;
-            Progress.UpdateLayout();
-            UpdateLayout();
+            StatusMessage.Dispatcher.BeginInvoke((Action)(() => StatusMessage.Text = args.Message));
+            Progress.Dispatcher.BeginInvoke((Action)(() => Progress.Value = args.Value));
         }
     }
 }

@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using P3DTool.DataModels.DataTypes;
 using P3DTool.Views;
@@ -23,11 +25,19 @@ namespace P3DTool.DataModels.FileStructure
         public MeshesChunk(P3D parent)
         {
             Parent = parent;
-            TreeItem = new TreeViewItem {Header = new P3DElementView(this, "Meshes chunk")};
-            Parent.TreeItem.Items.Add(TreeItem);
+            Application.Current.Dispatcher.BeginInvoke((Action)(() => addTreeItem()));
         }
 
-        public bool ReadChunk(BinaryReader reader)
+        private void addTreeItem()
+        {
+            lock (this)
+            {
+                TreeItem = new TreeViewItem { Header = new P3DElementView(this, "Meshes chunk") };
+                Parent.TreeItem.Items.Add(TreeItem);
+            }
+        }
+
+        public async Task<bool> ReadChunk(BinaryReader reader)
         {
             for (int i = 0; i < MeshesNum; i++)
             {
@@ -38,7 +48,8 @@ namespace P3DTool.DataModels.FileStructure
                     return false;
                 }
                 Meshes.Add(subMesh);
-                Parent.RaiseStatusUpdatedEvent(new StatusUpdatedEventArguments("Loading meshes from file", 40 + (40 / MeshesNum) * i));
+                Parent.RaiseStatusUpdatedEvent(new StatusUpdatedEventArguments("Loading meshes from file", (40 + (40 / MeshesNum) * i)));
+                await Task.Delay(0).ConfigureAwait(false);
             }
             return true;
         }

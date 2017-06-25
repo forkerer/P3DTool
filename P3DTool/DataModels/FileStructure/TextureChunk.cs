@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Windows;
 using System.Windows.Controls;
 using P3DTool.DataModels.DataTypes;
 using P3DTool.Views;
@@ -22,8 +23,18 @@ namespace P3DTool.DataModels.FileStructure
         public TextureChunk(P3D parent)
         {
             Parent = parent;
-            TreeItem = new TreeViewItem {Header = new P3DElementView(this, "Textures chunk")};
-            Parent.TreeItem.Items.Add(TreeItem);
+            Application.Current.Dispatcher.BeginInvoke((Action) (() => addTreeItem()));
+//            TreeItem = new TreeViewItem {Header = new P3DElementView(this, "Textures chunk")};
+//            Parent.TreeItem.Items.Add(TreeItem);
+        }
+
+        private void addTreeItem()
+        {
+            lock (this)
+            {
+                TreeItem = new TreeViewItem { Header = new P3DElementView(this, "Textures chunk") };
+                Parent.TreeItem.Items.Add(TreeItem);
+            }
         }
 
         public bool ReadChunk(BinaryReader reader)
@@ -44,8 +55,9 @@ namespace P3DTool.DataModels.FileStructure
                 }
                 return true;
             }
-            catch (Exception)
+            catch (Exception exc)
             {
+                MessageBox.Show(exc.Message);
                 return false;
             }
             

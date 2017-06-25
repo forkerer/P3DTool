@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:P3DTool"
         mc:Ignorable="d"
         Title="P3D Tool" Height="500" Width="750">
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -30,7 +31,8 @@
             <ScrollViewer Margin="10,10,0,14" Width="265" HorizontalAlignment="Left" DockPanel.Dock="Left" Grid.Column="1">
                 <StackPanel x:Name="itemInfo" HorizontalAlignment="Left" />
             </ScrollViewer>
-            <TreeView  DockPanel.Dock="Left" Grid.Column="2" Grid.ColumnSpan="2" x:Name="P3DView" Margin="10,10,10,14" MouseDoubleClick="P3DView_MouseDoubleClick" SelectedItemChanged="P3DView_SelectedItemChanged" MouseRightButtonDown="P3DView_MouseRightButtonDown" RenderTransformOrigin="0.5,0.5">
+
+            <TreeView  DockPanel.Dock="Left" Grid.Column="2" Grid.ColumnSpan="2" x:Name="P3DView" Margin="10,10,10,14" SelectedItemChanged="P3DView_SelectedItemChanged" MouseRightButtonDown="P3DView_MouseRightButtonDown" RenderTransformOrigin="0.5,0.5">
                 <TreeView.Resources>
                     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
                                      Color="DarkOrange" />
@@ -38,7 +40,7 @@
             </TreeView>
         </DockPanel>
         <Border Grid.Row="2" Grid.ColumnSpan="3" Background="LightGray"/>
-        <TextBlock Name="StatusMessage" Grid.Row="2" Grid.ColumnSpan="2" Text="" VerticalAlignment="Center"/>
+        <TextBlock Name="StatusMessage" Grid.Row="1" Grid.ColumnSpan="2" Text="" VerticalAlignment="Center" Margin="10,4,5,4"/>
         <ProgressBar Name="Progress" Grid.Row="2" Grid.Column="3" HorizontalContentAlignment="Right" Value="0"/>
     </Grid>
 </Window>
