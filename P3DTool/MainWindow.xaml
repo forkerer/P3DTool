@@ -1,0 +1,44 @@
+﻿<Window x:Class="P3DTool.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:P3DTool"
+        mc:Ignorable="d"
+        Title="P3D Tool" Height="500" Width="750">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="24"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="245"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="140"/>
+        </Grid.ColumnDefinitions>
+        <DockPanel Grid.ColumnSpan="3" Grid.RowSpan="1">
+            <ToolBarTray DockPanel.Dock="Top" >
+                <ToolBar HorizontalContentAlignment="Stretch" HorizontalAlignment="Left" >
+                    <Button Name="LoadButton" Content="Load" Width="70" HorizontalAlignment="Left" Click="LoadButton_Click" />
+                    <Button Name="SaveButton"  Content="Save" Width="70" HorizontalAlignment="Left" Click="SaveButton_Click" />
+                    <Separator/>
+                    <Button Content="Info" Width="70" HorizontalAlignment="Right" />
+                </ToolBar>
+            </ToolBarTray>
+            <!--            <Button Name="openFile" Content="Open File" HorizontalAlignment="Left" Height="40" Margin="10,10,0,0" VerticalAlignment="Top" Width="120" Click="Button_Click"/>-->
+            <!--            <Button Name="saveFile" Content="Save File" HorizontalAlignment="Left" Height="40" Margin="155,10,0,0" VerticalAlignment="Top" Width="120" Click="SaveButton_Click"/>-->
+            <ScrollViewer Margin="10,10,0,14" Width="265" HorizontalAlignment="Left" DockPanel.Dock="Left" Grid.Column="1">
+                <StackPanel x:Name="itemInfo" HorizontalAlignment="Left" />
+            </ScrollViewer>
+            <TreeView  DockPanel.Dock="Left" Grid.Column="2" Grid.ColumnSpan="2" x:Name="P3DView" Margin="10,10,10,14" MouseDoubleClick="P3DView_MouseDoubleClick" SelectedItemChanged="P3DView_SelectedItemChanged" MouseRightButtonDown="P3DView_MouseRightButtonDown" RenderTransformOrigin="0.5,0.5">
+                <TreeView.Resources>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+                                     Color="DarkOrange" />
+                </TreeView.Resources>
+            </TreeView>
+        </DockPanel>
+        <Border Grid.Row="2" Grid.ColumnSpan="3" Background="LightGray"/>
+        <TextBlock Name="StatusMessage" Grid.Row="2" Grid.ColumnSpan="2" Text="" VerticalAlignment="Center"/>
+        <ProgressBar Name="Progress" Grid.Row="2" Grid.Column="3" HorizontalContentAlignment="Right" Value="0"/>
+    </Grid>
+</Window>
