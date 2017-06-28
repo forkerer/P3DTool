@@ -72,6 +72,14 @@ namespace P3DTool.DataModels.FileStructure
             }
         }
 
+        public void ClearUnusedVertices()
+        {
+            foreach (Mesh mesh in Meshes)
+            {
+                mesh.ClearUnusedVertices();
+            }
+        }
+
         public string WriteChunk(BinaryWriter writer)
         {
             if (Size == 0)

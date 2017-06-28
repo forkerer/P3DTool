@@ -200,7 +200,7 @@ namespace P3DTool.DataModels.DataTypes
         {
             foreach (Lib3dsVertex vert in mesh.vertices)
             {
-                Vertices.Add(new P3DVertex(this,vert.x,vert.z,vert.y));
+                Vertices.Add(new P3DVertex(vert.x,vert.z,vert.y));
             }
 
             foreach (Lib3dsFace face in mesh.faces)
@@ -391,14 +391,14 @@ namespace P3DTool.DataModels.DataTypes
                     {
                         if (!VerticesToChange.ContainsKey(dic.Key.Item1))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
                                 Vertices[dic.Key.Item1].z));
                             VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
                             NumVertices++;
                         }
                         if (!VerticesToChange.ContainsKey(dic.Key.Item2))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
                                 Vertices[dic.Key.Item2].z));
                             VerticesToChange[dic.Key.Item2] = (short)(Vertices.Count - 1);
                             NumVertices++;
@@ -471,14 +471,14 @@ namespace P3DTool.DataModels.DataTypes
                     {
                         if (!VerticesToChange.ContainsKey(dic.Key.Item1))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
                                 Vertices[dic.Key.Item1].z));
                             VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
                             NumVertices++;
                         }
                         if (!VerticesToChange.ContainsKey(dic.Key.Item2))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
                                 Vertices[dic.Key.Item2].z));
                             VerticesToChange[dic.Key.Item2] = (short)(Vertices.Count - 1);
                             NumVertices++;
@@ -551,14 +551,14 @@ namespace P3DTool.DataModels.DataTypes
                     {
                         if (!VerticesToChange.ContainsKey(dic.Key.Item1))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
                                 Vertices[dic.Key.Item1].z));
                             VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
                             NumVertices++;
                         }
                         if (!VerticesToChange.ContainsKey(dic.Key.Item2))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
                                 Vertices[dic.Key.Item2].z));
                             VerticesToChange[dic.Key.Item2] = (short)(Vertices.Count - 1);
                             NumVertices++;
@@ -631,14 +631,14 @@ namespace P3DTool.DataModels.DataTypes
                     {
                         if (!VerticesToChange.ContainsKey(dic.Key.Item1))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
                                 Vertices[dic.Key.Item1].z));
                             VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
                             NumVertices++;
                         }
                         if (!VerticesToChange.ContainsKey(dic.Key.Item2))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
                                 Vertices[dic.Key.Item2].z));
                             VerticesToChange[dic.Key.Item2] = (short)(Vertices.Count - 1);
                             NumVertices++;
@@ -711,14 +711,14 @@ namespace P3DTool.DataModels.DataTypes
                     {
                         if (!VerticesToChange.ContainsKey(dic.Key.Item1))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
                                 Vertices[dic.Key.Item1].z));
                             VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
                             NumVertices++;
                         }
                         if (!VerticesToChange.ContainsKey(dic.Key.Item2))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
                                 Vertices[dic.Key.Item2].z));
                             VerticesToChange[dic.Key.Item2] = (short)(Vertices.Count - 1);
                             NumVertices++;
@@ -791,14 +791,14 @@ namespace P3DTool.DataModels.DataTypes
                     {
                         if (!VerticesToChange.ContainsKey(dic.Key.Item1))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
                                 Vertices[dic.Key.Item1].z));
                             VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
                             NumVertices++;
                         }
                         if (!VerticesToChange.ContainsKey(dic.Key.Item2))
                         {
-                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                            Vertices.Add(new P3DVertex(Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
                                 Vertices[dic.Key.Item2].z));
                             VerticesToChange[dic.Key.Item2] = (short) (Vertices.Count - 1);
                             NumVertices++;
@@ -836,28 +836,40 @@ namespace P3DTool.DataModels.DataTypes
                 if (VerticeToUV.ContainsKey(poly.P1))
                 {
                     var UVS = VerticeToUV[poly.P1];
-                    if (!(Math.Abs(UVS.Item1 - poly.U1) < 0.0001f && Math.Abs(UVS.Item2 - poly.V1) < 0.0001f))
+                    if (!(Math.Abs(UVS.Item1 - poly.U1) < 0.00001f && Math.Abs(UVS.Item2 - poly.V1) < 0.00001f))
                     {
                         poly.P1 = GetVerticeForPolyUV(poly.P1, poly.U1, poly.V1, VerticeToUV);
                     }
+                }
+                else
+                {
+                    VerticeToUV[poly.P1] = new Tuple<float, float>(poly.U1, poly.V1);
                 }
 
                 if (VerticeToUV.ContainsKey(poly.P2))
                 {
                     var UVS = VerticeToUV[poly.P2];
-                    if (!(Math.Abs(UVS.Item1 - poly.U2) < 0.0001f && Math.Abs(UVS.Item2 - poly.V2) < 0.0001f))
+                    if (!(Math.Abs(UVS.Item1 - poly.U2) < 0.00001f && Math.Abs(UVS.Item2 - poly.V2) < 0.00001f))
                     {
                         poly.P2 = GetVerticeForPolyUV(poly.P2, poly.U2, poly.V2, VerticeToUV);
                     }
+                }
+                else
+                {
+                    VerticeToUV[poly.P2] = new Tuple<float, float>(poly.U2, poly.V2);
                 }
 
                 if (VerticeToUV.ContainsKey(poly.P3))
                 {
                     var UVS = VerticeToUV[poly.P3];
-                    if (!(Math.Abs(UVS.Item1 - poly.U3) < 0.0001f && Math.Abs(UVS.Item2 - poly.V3) < 0.0001f))
+                    if (!(Math.Abs(UVS.Item1 - poly.U3) < 0.00001f && Math.Abs(UVS.Item2 - poly.V3) < 0.00001f))
                     {
                         poly.P3 = GetVerticeForPolyUV(poly.P3, poly.U3, poly.V3, VerticeToUV);
                     }
+                }
+                else
+                {
+                    VerticeToUV[poly.P3] = new Tuple<float, float>(poly.U3, poly.V3);
                 }
             }
         }
@@ -868,7 +880,7 @@ namespace P3DTool.DataModels.DataTypes
             if (orgVertex.NextToCheck != null)
             {
                 var UVS = VerticeToUV[orgVertex.NextToCheck.Value];
-                if ((Math.Abs(UVS.Item1 - U) < 0.0001f && Math.Abs(UVS.Item2 - V) < 0.0001f))
+                if ((Math.Abs(UVS.Item1 - U) < 0.00001f && Math.Abs(UVS.Item2 - V) < 0.00001f))
                 {
                     return orgVertex.NextToCheck.Value;
                 }
@@ -884,6 +896,39 @@ namespace P3DTool.DataModels.DataTypes
             Vertices.Add(newVert);
             NumVertices++;
             return (short) (Vertices.Count - 1);
+        }
+
+        public void ClearUnusedVertices()
+        {
+            Dictionary<short, bool> UsedVertices = new Dictionary<short, bool>();
+            int counter = 0;
+            Dictionary<short,short> Redirection = new Dictionary<short, short>();
+            List<P3DVertex> newVertices = new List<P3DVertex>();
+            foreach (var poly in Polygons)
+            {
+                UsedVertices[poly.P1] = true;
+                UsedVertices[poly.P2] = true;
+                UsedVertices[poly.P3] = true;
+            }
+
+            for (short i = 0; i < Vertices.Count; i++)
+            {
+                if (UsedVertices.ContainsKey(i))
+                {
+                    newVertices.Add(Vertices[i]);
+                    Redirection[i] = (short)counter;
+                    counter++;
+                }
+            }
+            for (short i = 0; i < Polygons.Count; i++)
+            {
+                TexturePolygon poly = Polygons[i];
+                poly.P1 = Redirection[poly.P1];
+                poly.P2 = Redirection[poly.P2];
+                poly.P3 = Redirection[poly.P3];
+            }
+            Vertices = newVertices;
+            NumVertices = (short)newVertices.Count;
         }
 
         //private int GetVertexForMaterial(float x, float y, float u, float v)

@@ -148,9 +148,11 @@ namespace P3DTool.DataModels
                     return;
                 }
 
-                MeshesChunk.SeparateUVVertices();
+               
                 MeshesChunk.SeparateSubMeshesEdges();
-                
+                MeshesChunk.SeparateUVVertices();
+                MeshesChunk.ClearUnusedVertices();
+
 
                 StatusUpdated(new StatusUpdatedEventArguments("Loading userdata from file", 80));
                 await Task.Delay(0).ConfigureAwait(false);
@@ -318,6 +320,7 @@ namespace P3DTool.DataModels
             }
 
             //MeshesChunk.SeparateSubMeshesEdges();
+            MeshesChunk.ClearUnusedVertices();
             MeshesChunk.CheckFlagsValidity();
             MeshesChunk.CalculateMeshChunkSize();
             P3DVertex origin = MeshesChunk.CalculateMeshesLocalPos();

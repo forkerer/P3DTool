@@ -44,7 +44,7 @@ namespace P3DTool
             if (result == true)
             {
                 string path = file.FileName;
-                if (Path.GetExtension(path) == ".p3d")
+                if (Path.GetExtension(path).ToLower() == ".p3d")
                 {
                     ChangeStatus(new StatusUpdatedEventArguments("Loading p3d file", 10));
                     SelectedElement = null;
@@ -56,7 +56,7 @@ namespace P3DTool
                 }
                 else
                 {
-                    if (Path.GetExtension(path) == ".3ds")
+                    if (Path.GetExtension(path).ToLower() == ".3ds")
                     {
                         ChangeStatus(new StatusUpdatedEventArguments("Loading 3ds file", 10));
                         P3DViewItems.Clear();
