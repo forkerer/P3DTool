@@ -48,11 +48,28 @@ namespace P3DTool.DataModels.FileStructure
                 {
                     return false;
                 }
+
                 Meshes.Add(subMesh);
                 Parent.RaiseStatusUpdatedEvent(new StatusUpdatedEventArguments("Loading meshes from file", (40 + (40 / MeshesNum) * i)));
                 await Task.Delay(0).ConfigureAwait(false);
             }
             return true;
+        }
+
+        public void SeparateSubMeshesEdges()
+        {
+            foreach (Mesh mesh in Meshes)
+            {
+                mesh.SeparateHardEdges();
+            }
+        }
+
+        public void SeparateUVVertices()
+        {
+            foreach (Mesh mesh in Meshes)
+            {
+                mesh.SeparateUVVertices();
+            }
         }
 
         public string WriteChunk(BinaryWriter writer)
@@ -148,6 +165,14 @@ namespace P3DTool.DataModels.FileStructure
                 mesh.CalculateLocalPos(origin);
             }
             return origin;
+        }
+
+        public void MoveMeshesToOrigin()
+        {
+            foreach (Mesh mesh in Meshes)
+            {
+                mesh.MoveVerticesToOrigin();
+            }
         }
 
         public override ArrayList GetItemInfo()

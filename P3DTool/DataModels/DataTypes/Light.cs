@@ -75,6 +75,20 @@ namespace P3DTool.DataModels.DataTypes
             Color = ColorFromRGB((Color >> 16) & 0x0ff, (Color >> 8) & 0x0ff, col);
         }
 
+        public int GetColorRed()
+        {
+            return (Color >> 16) & 0x0ff; ;
+        }
+        
+        public int GetColorGreen()
+        {
+            return (Color >> 8) & 0x0ff;
+        }
+
+        public int GetColorBlue()
+        {
+            return (Color) & 0x0ff;
+        }
         public override ArrayList GetItemInfo()
         {
             ArrayList itemInfo = new ArrayList

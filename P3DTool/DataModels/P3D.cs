@@ -148,6 +148,10 @@ namespace P3DTool.DataModels
                     return;
                 }
 
+                MeshesChunk.SeparateUVVertices();
+                MeshesChunk.SeparateSubMeshesEdges();
+                
+
                 StatusUpdated(new StatusUpdatedEventArguments("Loading userdata from file", 80));
                 await Task.Delay(0).ConfigureAwait(false);
                 UserDataChunk = new UserDataChunk(this);
@@ -158,7 +162,6 @@ namespace P3DTool.DataModels
                     MessageBox.Show("Expected USER chunk header, got " + Encoding.ASCII.GetString(userDataHeader));
                     return;
                 }
-
                 UserDataChunk.Size = reader.ReadInt32();
                 UserDataChunk.UserData = reader.ReadBytes(UserDataChunk.Size);
 
@@ -196,6 +199,7 @@ namespace P3DTool.DataModels
             }
 
             // Write meshes chunk
+            //MeshesChunk.CalculateMeshChunkSize();
             message = MeshesChunk.WriteChunk(writer);
             if (!message.Equals(String.Empty))
             {
@@ -274,6 +278,10 @@ namespace P3DTool.DataModels
                     TextureChunk.TextureNames.Add(new TextureName(TextureChunk,mat.texture1_map.name.ToLower()));
                 }
             }
+            if (TextureChunk.TextureNames.Count == 0)
+            {
+                TextureChunk.TextureNames.Add(new TextureName(TextureChunk,"colwhite.tga"));
+            }
             TextureChunk.CalculateSizeFromTexturesList();
             TextureChunk.CalculateTexNum();
 
@@ -303,13 +311,20 @@ namespace P3DTool.DataModels
                 Mesh newMesh = new Mesh(MeshesChunk);
                 newMesh.Parse3DSMesh(scene, mesh);
                 newMesh.SortPolygonsAndGenerateTextureInfo();
+                newMesh.SeparateHardEdges();
+                newMesh.SeparateUVVertices();
                 newMesh.CalculateExtent();
                 MeshesChunk.Meshes.Add(newMesh);
             }
+
+            //MeshesChunk.SeparateSubMeshesEdges();
             MeshesChunk.CheckFlagsValidity();
             MeshesChunk.CalculateMeshChunkSize();
             P3DVertex origin = MeshesChunk.CalculateMeshesLocalPos();
+            MeshesChunk.MoveMeshesToOrigin();
             LightsChunk.CalculateLightsPostionRelativeToOrigin(origin);
+
+            Size.CalculateExtentFromMeshes(MeshesChunk.Meshes);
 
             UserDataChunk = new UserDataChunk(this);
             UserDataChunk.Size = 4;

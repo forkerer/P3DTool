@@ -121,14 +121,22 @@ namespace P3DTool
             }
             SaveFileDialog file = new SaveFileDialog
             {
-                Filter = "P3D File (*.p3d)|*.p3d",
+                Filter = "P3D File (*.p3d)|*.p3d|3ds File (*.3ds)|*.3ds",
                 DefaultExt = "p3d"
             };
             bool? result = file.ShowDialog();
             if (result == true)
             {
                 string path = file.FileName;
-                P3DFile.SaveP3D(path);
+                switch (Path.GetExtension(path).ToLower())
+                {
+                    case ".p3d":
+                        P3DFile.SaveP3D(path);
+                        break;
+                    case ".3ds":
+                        _3dsExporter.ExportP3D(P3DFile, path);
+                        break;
+                }
             }
         }
 

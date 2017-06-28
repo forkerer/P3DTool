@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media.Media3D;
 using lib3ds.Net;
 using P3DTool.DataModels.FileStructure;
@@ -199,28 +200,33 @@ namespace P3DTool.DataModels.DataTypes
         {
             foreach (Lib3dsVertex vert in mesh.vertices)
             {
-                Vertices.Add(new P3DVertex(vert.x,vert.z,vert.y));
+                Vertices.Add(new P3DVertex(this,vert.x,vert.z,vert.y));
             }
 
             foreach (Lib3dsFace face in mesh.faces)
             {
                 if (face.index.Length > 3)
                 {
-                    MessageBox.Show("SHIT.");
+                    //MessageBox.Show("SHIT.");
                 }
                 TexturePolygon texPoly = new TexturePolygon();
-                texPoly.P1 = Convert.ToInt16(face.index[0]);
-                texPoly.P2 = Convert.ToInt16(face.index[2]);
-                texPoly.P3 = Convert.ToInt16(face.index[1]);
+
+                texPoly.Texture = GetTextureFrom3dsID(file, face.material).Name;
+                texPoly.Material = MaterialFrom3DS(file.materials[face.material], (face.smoothing_group != 0));
+                texPoly.SGFrom3DS = face.smoothing_group;
                 texPoly.U1 = mesh.texcos[face.index[0]].s;
                 texPoly.U2 = mesh.texcos[face.index[2]].s;
                 texPoly.U3 = mesh.texcos[face.index[1]].s;
                 texPoly.V1 = mesh.texcos[face.index[0]].t;
                 texPoly.V2 = mesh.texcos[face.index[2]].t;
                 texPoly.V3 = mesh.texcos[face.index[1]].t;
-                texPoly.Texture = GetTextureFrom3dsID(file,face.material).Name;
-                texPoly.Material = MaterialFrom3DS(file.materials[face.material], (face.smoothing_group != 0));
-                texPoly.SGFrom3DS = face.smoothing_group;
+
+                texPoly.P1 = Convert.ToInt16(face.index[0]);
+                texPoly.P2 = Convert.ToInt16(face.index[2]);
+                texPoly.P3 = Convert.ToInt16(face.index[1]);
+
+                
+                
                 Polygons.Add(texPoly);
             }
 
@@ -228,8 +234,8 @@ namespace P3DTool.DataModels.DataTypes
             Application.Current.Dispatcher.BeginInvoke((Action)(() => ((P3DElementView)TreeItem.Header).content.Text = Name));
             Size = 1;
             Flags = FlagFrom3DSName(mesh.name);
-            NumVertices = Convert.ToInt16(mesh.nvertices);
-            NumPolys = Convert.ToInt16(mesh.nfaces);
+            NumVertices = Convert.ToInt16(Vertices.Count);
+            NumPolys = Convert.ToInt16(Polygons.Count);
             LocalPos = new P3DVertex(mesh.matrix[3, 0], mesh.matrix[3, 1], mesh.matrix[3, 2]);
             Length = 0;
             Height = 0;
@@ -323,6 +329,565 @@ namespace P3DTool.DataModels.DataTypes
             return GetTextureList()[0];
         }
 
+        /// <summary>
+        /// This one needs a bit of an explaination, it works this way:
+        /// It goes over every texture info in mesh, for each texture and material type it looks for all edges in element.
+        /// If the edge is found only once, it means it's border edge, and it should be replaced with hard edge
+        /// Overall the algoritm separates all textures and materials with hard edges, thus making it work nicely in 3ds max
+        /// Still leaves some vertices that have different uv's in different polygons, so that has to be fixed later on
+        /// </summary>
+        public void SeparateHardEdges()
+        {
+            Dictionary<Tuple<short,short>, int> Edges = new Dictionary<Tuple<short, short>, int>();
+            Dictionary<short, short> VerticesToChange = new Dictionary<short, short>();
+            short polyCounter = 0;
+            for (int index = 0; index < Info.Count; index++)
+            {
+                TextureInfo texInfo = Info[index];
+                //MessageBox.Show(texInfo.TextureStart.ToString());
+                short curCounter = polyCounter;
+                for (int i = 0; i < texInfo.NumFlat; i++)
+                {
+                    short P1 = Polygons[polyCounter].P1;
+                    short P2 = Polygons[polyCounter].P2;
+                    short P3 = Polygons[polyCounter].P3;
+
+                    Tuple<short, short> Edge1 = new Tuple<short, short>(P1, P2);
+                    Tuple<short, short> Edge2 = new Tuple<short, short>(P2, P3);
+                    Tuple<short, short> Edge3 = new Tuple<short, short>(P3, P1);
+
+                    if (Edges.ContainsKey(Edge1))
+                    {
+                        Edges[Edge1]++;
+                    }
+                    else
+                    {
+                        Edges[Edge1] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge2))
+                    {
+                        Edges[Edge2]++;
+                    }
+                    else
+                    {
+                        Edges[Edge2] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge3))
+                    {
+                        Edges[Edge3]++;
+                    }
+                    else
+                    {
+                        Edges[Edge3] = 1;
+                    }
+                    polyCounter++;
+                }
+
+                foreach (KeyValuePair<Tuple<short, short>, int> dic in Edges)
+                {
+                    if (dic.Value == 1)
+                    {
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item1))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                                Vertices[dic.Key.Item1].z));
+                            VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item2))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                                Vertices[dic.Key.Item2].z));
+                            VerticesToChange[dic.Key.Item2] = (short)(Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                    }
+                }
+
+                for (int ind = curCounter; ind < polyCounter; ind++)
+                {
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P1))
+                    {
+                        Polygons[ind].P1 = VerticesToChange[Polygons[ind].P1];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P2))
+                    {
+                        Polygons[ind].P2 = VerticesToChange[Polygons[ind].P2];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P3))
+                    {
+                        Polygons[ind].P3 = VerticesToChange[Polygons[ind].P3];
+                    }
+                }
+
+                Edges.Clear();
+                VerticesToChange.Clear();
+
+                curCounter = polyCounter;
+                for (int i = 0; i < texInfo.NumFlatMetal; i++)
+                {
+                    short P1 = Polygons[polyCounter].P1;
+                    short P2 = Polygons[polyCounter].P2;
+                    short P3 = Polygons[polyCounter].P3;
+
+                    Tuple<short, short> Edge1 = new Tuple<short, short>(P1, P2);
+                    Tuple<short, short> Edge2 = new Tuple<short, short>(P2, P3);
+                    Tuple<short, short> Edge3 = new Tuple<short, short>(P3, P1);
+
+                    if (Edges.ContainsKey(Edge1))
+                    {
+                        Edges[Edge1]++;
+                    }
+                    else
+                    {
+                        Edges[Edge1] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge2))
+                    {
+                        Edges[Edge2]++;
+                    }
+                    else
+                    {
+                        Edges[Edge2] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge3))
+                    {
+                        Edges[Edge3]++;
+                    }
+                    else
+                    {
+                        Edges[Edge3] = 1;
+                    }
+                    polyCounter++;
+                }
+
+                foreach (KeyValuePair<Tuple<short, short>, int> dic in Edges)
+                {
+                    if (dic.Value == 1)
+                    {
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item1))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                                Vertices[dic.Key.Item1].z));
+                            VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item2))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                                Vertices[dic.Key.Item2].z));
+                            VerticesToChange[dic.Key.Item2] = (short)(Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                    }
+                }
+
+                for (int ind = curCounter; ind < polyCounter; ind++)
+                {
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P1))
+                    {
+                        Polygons[ind].P1 = VerticesToChange[Polygons[ind].P1];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P2))
+                    {
+                        Polygons[ind].P2 = VerticesToChange[Polygons[ind].P2];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P3))
+                    {
+                        Polygons[ind].P3 = VerticesToChange[Polygons[ind].P3];
+                    }
+                }
+
+                Edges.Clear();
+                VerticesToChange.Clear();
+
+                curCounter = polyCounter;
+                for (int i = 0; i < texInfo.NumGouraud; i++)
+                {
+                    short P1 = Polygons[polyCounter].P1;
+                    short P2 = Polygons[polyCounter].P2;
+                    short P3 = Polygons[polyCounter].P3;
+
+                    Tuple<short, short> Edge1 = new Tuple<short, short>(P1, P2);
+                    Tuple<short, short> Edge2 = new Tuple<short, short>(P2, P3);
+                    Tuple<short, short> Edge3 = new Tuple<short, short>(P3, P1);
+
+                    if (Edges.ContainsKey(Edge1))
+                    {
+                        Edges[Edge1]++;
+                    }
+                    else
+                    {
+                        Edges[Edge1] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge2))
+                    {
+                        Edges[Edge2]++;
+                    }
+                    else
+                    {
+                        Edges[Edge2] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge3))
+                    {
+                        Edges[Edge3]++;
+                    }
+                    else
+                    {
+                        Edges[Edge3] = 1;
+                    }
+                    polyCounter++;
+                }
+
+                foreach (KeyValuePair<Tuple<short, short>, int> dic in Edges)
+                {
+                    if (dic.Value == 1)
+                    {
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item1))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                                Vertices[dic.Key.Item1].z));
+                            VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item2))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                                Vertices[dic.Key.Item2].z));
+                            VerticesToChange[dic.Key.Item2] = (short)(Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                    }
+                }
+
+                for (int ind = curCounter; ind < polyCounter; ind++)
+                {
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P1))
+                    {
+                        Polygons[ind].P1 = VerticesToChange[Polygons[ind].P1];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P2))
+                    {
+                        Polygons[ind].P2 = VerticesToChange[Polygons[ind].P2];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P3))
+                    {
+                        Polygons[ind].P3 = VerticesToChange[Polygons[ind].P3];
+                    }
+                }
+
+                Edges.Clear();
+                VerticesToChange.Clear();
+
+                curCounter = polyCounter;
+                for (int i = 0; i < texInfo.NumGouraudMetal; i++)
+                {
+                    short P1 = Polygons[polyCounter].P1;
+                    short P2 = Polygons[polyCounter].P2;
+                    short P3 = Polygons[polyCounter].P3;
+
+                    Tuple<short, short> Edge1 = new Tuple<short, short>(P1, P2);
+                    Tuple<short, short> Edge2 = new Tuple<short, short>(P2, P3);
+                    Tuple<short, short> Edge3 = new Tuple<short, short>(P3, P1);
+
+                    if (Edges.ContainsKey(Edge1))
+                    {
+                        Edges[Edge1]++;
+                    }
+                    else
+                    {
+                        Edges[Edge1] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge2))
+                    {
+                        Edges[Edge2]++;
+                    }
+                    else
+                    {
+                        Edges[Edge2] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge3))
+                    {
+                        Edges[Edge3]++;
+                    }
+                    else
+                    {
+                        Edges[Edge3] = 1;
+                    }
+                    polyCounter++;
+                }
+
+                foreach (KeyValuePair<Tuple<short, short>, int> dic in Edges)
+                {
+                    if (dic.Value == 1)
+                    {
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item1))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                                Vertices[dic.Key.Item1].z));
+                            VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item2))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                                Vertices[dic.Key.Item2].z));
+                            VerticesToChange[dic.Key.Item2] = (short)(Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                    }
+                }
+
+                for (int ind = curCounter; ind < polyCounter; ind++)
+                {
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P1))
+                    {
+                        Polygons[ind].P1 = VerticesToChange[Polygons[ind].P1];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P2))
+                    {
+                        Polygons[ind].P2 = VerticesToChange[Polygons[ind].P2];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P3))
+                    {
+                        Polygons[ind].P3 = VerticesToChange[Polygons[ind].P3];
+                    }
+                }
+
+                Edges.Clear();
+                VerticesToChange.Clear();
+
+                curCounter = polyCounter;
+                for (int i = 0; i < texInfo.NumGouraudMetalEnv; i++)
+                {
+                    short P1 = Polygons[polyCounter].P1;
+                    short P2 = Polygons[polyCounter].P2;
+                    short P3 = Polygons[polyCounter].P3;
+
+                    Tuple<short, short> Edge1 = new Tuple<short, short>(P1, P2);
+                    Tuple<short, short> Edge2 = new Tuple<short, short>(P2, P3);
+                    Tuple<short, short> Edge3 = new Tuple<short, short>(P3, P1);
+
+                    if (Edges.ContainsKey(Edge1))
+                    {
+                        Edges[Edge1]++;
+                    }
+                    else
+                    {
+                        Edges[Edge1] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge2))
+                    {
+                        Edges[Edge2]++;
+                    }
+                    else
+                    {
+                        Edges[Edge2] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge3))
+                    {
+                        Edges[Edge3]++;
+                    }
+                    else
+                    {
+                        Edges[Edge3] = 1;
+                    }
+                    polyCounter++;
+                }
+
+                foreach (KeyValuePair<Tuple<short, short>, int> dic in Edges)
+                {
+                    if (dic.Value == 1)
+                    {
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item1))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                                Vertices[dic.Key.Item1].z));
+                            VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item2))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                                Vertices[dic.Key.Item2].z));
+                            VerticesToChange[dic.Key.Item2] = (short)(Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                    }
+                }
+
+                for (int ind = curCounter; ind < polyCounter; ind++)
+                {
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P1))
+                    {
+                        Polygons[ind].P1 = VerticesToChange[Polygons[ind].P1];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P2))
+                    {
+                        Polygons[ind].P2 = VerticesToChange[Polygons[ind].P2];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P3))
+                    {
+                        Polygons[ind].P3 = VerticesToChange[Polygons[ind].P3];
+                    }
+                }
+
+                Edges.Clear();
+                VerticesToChange.Clear();
+
+                curCounter = polyCounter;
+                for (int i = 0; i < texInfo.NumShining; i++)
+                {
+                    short P1 = Polygons[polyCounter].P1;
+                    short P2 = Polygons[polyCounter].P2;
+                    short P3 = Polygons[polyCounter].P3;
+
+                    Tuple<short, short> Edge1 = new Tuple<short, short>(P1, P2);
+                    Tuple<short, short> Edge2 = new Tuple<short, short>(P2, P3);
+                    Tuple<short, short> Edge3 = new Tuple<short, short>(P3, P1);
+
+                    if (Edges.ContainsKey(Edge1))
+                    {
+                        Edges[Edge1]++;
+                    }
+                    else
+                    {
+                        Edges[Edge1] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge2))
+                    {
+                        Edges[Edge2]++;
+                    }
+                    else
+                    {
+                        Edges[Edge2] = 1;
+                    }
+
+                    if (Edges.ContainsKey(Edge3))
+                    {
+                        Edges[Edge3]++;
+                    }
+                    else
+                    {
+                        Edges[Edge3] = 1;
+                    }
+                    polyCounter++;
+                }
+
+                foreach (KeyValuePair<Tuple<short, short>, int> dic in Edges)
+                {
+                    if (dic.Value == 1)
+                    {
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item1))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item1].x, Vertices[dic.Key.Item1].y,
+                                Vertices[dic.Key.Item1].z));
+                            VerticesToChange[dic.Key.Item1] = (short) (Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                        if (!VerticesToChange.ContainsKey(dic.Key.Item2))
+                        {
+                            Vertices.Add(new P3DVertex(this, Vertices[dic.Key.Item2].x, Vertices[dic.Key.Item2].y,
+                                Vertices[dic.Key.Item2].z));
+                            VerticesToChange[dic.Key.Item2] = (short) (Vertices.Count - 1);
+                            NumVertices++;
+                        }
+                    }
+                }
+
+                for (int ind = curCounter; ind < polyCounter; ind++)
+                {
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P1))
+                    {
+                        Polygons[ind].P1 = VerticesToChange[Polygons[ind].P1];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P2))
+                    {
+                        Polygons[ind].P2 = VerticesToChange[Polygons[ind].P2];
+                    }
+                    if (VerticesToChange.ContainsKey(Polygons[ind].P3))
+                    {
+                        Polygons[ind].P3 = VerticesToChange[Polygons[ind].P3];
+                    }
+                }
+
+                Edges.Clear();
+                VerticesToChange.Clear();
+            }
+        }
+
+
+        public void SeparateUVVertices()
+        {
+            Dictionary<short, Tuple<float, float>> VerticeToUV = new Dictionary<short, Tuple<float, float>>();
+            foreach (TexturePolygon poly in Polygons)
+            {
+                if (VerticeToUV.ContainsKey(poly.P1))
+                {
+                    var UVS = VerticeToUV[poly.P1];
+                    if (!(Math.Abs(UVS.Item1 - poly.U1) < 0.0001f && Math.Abs(UVS.Item2 - poly.V1) < 0.0001f))
+                    {
+                        poly.P1 = GetVerticeForPolyUV(poly.P1, poly.U1, poly.V1, VerticeToUV);
+                    }
+                }
+
+                if (VerticeToUV.ContainsKey(poly.P2))
+                {
+                    var UVS = VerticeToUV[poly.P2];
+                    if (!(Math.Abs(UVS.Item1 - poly.U2) < 0.0001f && Math.Abs(UVS.Item2 - poly.V2) < 0.0001f))
+                    {
+                        poly.P2 = GetVerticeForPolyUV(poly.P2, poly.U2, poly.V2, VerticeToUV);
+                    }
+                }
+
+                if (VerticeToUV.ContainsKey(poly.P3))
+                {
+                    var UVS = VerticeToUV[poly.P3];
+                    if (!(Math.Abs(UVS.Item1 - poly.U3) < 0.0001f && Math.Abs(UVS.Item2 - poly.V3) < 0.0001f))
+                    {
+                        poly.P3 = GetVerticeForPolyUV(poly.P3, poly.U3, poly.V3, VerticeToUV);
+                    }
+                }
+            }
+        }
+
+        private short GetVerticeForPolyUV(short P, float U, float V, Dictionary<short, Tuple<float, float>> VerticeToUV)
+        {
+            P3DVertex orgVertex = Vertices[P];
+            if (orgVertex.NextToCheck != null)
+            {
+                var UVS = VerticeToUV[orgVertex.NextToCheck.Value];
+                if ((Math.Abs(UVS.Item1 - U) < 0.0001f && Math.Abs(UVS.Item2 - V) < 0.0001f))
+                {
+                    return orgVertex.NextToCheck.Value;
+                }
+                else
+                {
+                    return GetVerticeForPolyUV(orgVertex.NextToCheck.Value, U, V, VerticeToUV);
+                }
+            }
+
+            P3DVertex newVert = new P3DVertex(orgVertex.x, orgVertex.y, orgVertex.z);
+            orgVertex.NextToCheck = (short) Vertices.Count;
+            VerticeToUV[(short)Vertices.Count] = new Tuple<float, float>(U,V);
+            Vertices.Add(newVert);
+            NumVertices++;
+            return (short) (Vertices.Count - 1);
+        }
+
+        //private int GetVertexForMaterial(float x, float y, float u, float v)
+
         public void SortPolygonsAndGenerateTextureInfo()
         {
             List<TexturePolygon> newPolygons = new List<TexturePolygon>();
@@ -390,6 +955,7 @@ namespace P3DTool.DataModels.DataTypes
             LocalPos.x = ((maxX + minX) / 2);
             LocalPos.y = ((maxY + minY) / 2);
             LocalPos.z = ((maxZ + minZ) / 2);
+            
         }
 
         public void CalculateLocalPos(P3DVertex origin)
@@ -397,6 +963,16 @@ namespace P3DTool.DataModels.DataTypes
             LocalPos.x -= origin.x;
             LocalPos.y -= origin.y;
             LocalPos.z -= origin.z;
+        }
+
+        public void MoveVerticesToOrigin()
+        {
+            foreach (P3DVertex vert in Vertices)
+            {
+                vert.x -= LocalPos.x;
+                vert.y -= LocalPos.y;
+                vert.z -= LocalPos.z;
+            }
         }
 
         private P3DMaterial MaterialFrom3DS(Lib3dsMaterial material, bool hasSmoothing)
